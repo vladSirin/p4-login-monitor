@@ -1,0 +1,83 @@
+{
+  "name": "p4-login-monitor",
+  "displayName": "P4 Login Monitor",
+  "description": "Monitors Perforce login status and prompts for re-login when ticket expires",
+  "version": "1.0.0",
+  "publisher": "Shado",
+  "author": {
+    "name": "Shado"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vladSirin/p4-login-monitor"
+  },
+  "bugs": {
+    "url": "https://github.com/vladSirin/p4-login-monitor/issues"
+  },
+  "homepage": "https://github.com/vladSirin/p4-login-monitor#readme",
+  "icon": "icon.png",
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
+  "keywords": [
+    "perforce",
+    "p4",
+    "login",
+    "version control",
+    "scm",
+    "authentication"
+  ],
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "SCM Providers",
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "p4LoginMonitor.checkNow",
+        "title": "P4: Check Login Status"
+      },
+      {
+        "command": "p4LoginMonitor.login",
+        "title": "P4: Login Now"
+      }
+    ],
+    "configuration": {
+      "title": "P4 Login Monitor",
+      "properties": {
+        "p4LoginMonitor.checkIntervalMinutes": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 60,
+          "description": "How often to check P4 login status (in minutes)"
+        },
+        "p4LoginMonitor.showStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show P4 login status in the status bar"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.74.0",
+    "typescript": "^5.0.0"
+  }
+}
