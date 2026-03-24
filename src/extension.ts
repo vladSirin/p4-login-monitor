@@ -149,20 +149,38 @@ function checkP4LoginStatus(showSuccess: boolean) {
 function updateStatusBar(loggedIn: boolean, tooltip: string) {
     const config = vscode.workspace.getConfiguration('p4LoginMonitor');
     const showStatusBar = config.get<boolean>('showStatusBar', true);
+    const autoReconnect = config.get<boolean>('autoReconnect', true);
 
+    // Optimistically set the visuals
     if (loggedIn) {
         statusBarItem.text = '$(check) P4';
         statusBarItem.backgroundColor = undefined;
-        statusBarItem.tooltip = `Perforce: ${tooltip}\nClick to check status`;
     } else {
         statusBarItem.text = '$(warning) P4';
         statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
-        statusBarItem.tooltip = `Perforce: ${tooltip}\nClick to check status`;
     }
 
     if (showStatusBar) {
         statusBarItem.show();
+    } else {
+        statusBarItem.hide();
     }
+
+    // Determine config states for the tooltip asynchronously
+    secretStorage.get(P4_PASSWORD_KEY).then(
+        savedPassword => {
+            const hasPassword = !!savedPassword;
+            const autoConnectText = `Auto Connect: ${autoReconnect ? 'On' : 'Off'}`;
+            const savedPwdText = `Saved Password: ${hasPassword ? 'Yes' : 'No'}`;
+            const fullTooltip = `Perforce: ${tooltip}\n${autoConnectText}\n${savedPwdText}\nClick to check status`;
+            
+            statusBarItem.tooltip = fullTooltip;
+        },
+        (err: any) => {
+            console.error('Failed to get password for tooltip', err);
+            statusBarItem.tooltip = `Perforce: ${tooltip}\nClick to check status`;
+        }
+    );
 }
 
 async function handleNotLoggedInState(showSuccess: boolean) {

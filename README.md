@@ -45,6 +45,12 @@ This extension contributes the following settings:
 | `P4: Save Password for Auto-Reconnect` | Securely save your Perforce password |
 | `P4: Clear Saved Password` | Clear your saved Perforce password |
 
+## How to Set the Saved Password
+
+You can set your password for the **Auto-Reconnect** feature in two ways:
+1. **Anytime**: Open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`) and run **`P4: Save Password for Auto-Reconnect`**.
+2. **On Expiration**: When your ticket expires, a notification warning will pop up. Click the **"Login & Save Password"** button to log in and save it simultaneously.
+
 ## Usage
 
 1. Install the extension
