@@ -5,9 +5,15 @@ let statusBarItem: vscode.StatusBarItem;
 let checkTimer: NodeJS.Timeout | undefined;
 let isLoggedIn: boolean = false;
 let lastNotificationTime: number = 0;
+let secretStorage: vscode.SecretStorage;
+const P4_PASSWORD_KEY = 'p4.password';
+let isAutoLoggingIn: boolean = false;
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('P4 Login Monitor is now active');
+
+    // Store secret storage reference
+    secretStorage = context.secrets;
 
     // Create status bar item
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
@@ -24,6 +30,29 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('p4LoginMonitor.login', () => {
             doP4Login();
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('p4LoginMonitor.savePassword', async () => {
+            const password = await vscode.window.showInputBox({
+                prompt: 'Enter your Perforce password to save for auto-reconnect',
+                password: true,
+                ignoreFocusOut: true
+            });
+            if (password) {
+                await secretStorage.store(P4_PASSWORD_KEY, password);
+                vscode.window.showInformationMessage('P4 Login Monitor: Password saved securely.');
+                // Also trigger a login check right after saving
+                checkP4LoginStatus(true);
+            }
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('p4LoginMonitor.clearPassword', async () => {
+            await secretStorage.delete(P4_PASSWORD_KEY);
+            vscode.window.showInformationMessage('P4 Login Monitor: Saved password cleared.');
         })
     );
 
@@ -80,7 +109,7 @@ function checkP4LoginStatus(showSuccess: boolean) {
             // Not logged in
             isLoggedIn = false;
             updateStatusBar(false, 'Not logged in');
-            promptForLogin();
+            handleNotLoggedInState(showSuccess);
         } else if (output.includes('ticket expires')) {
             // Logged in with expiry info
             isLoggedIn = true;
@@ -136,6 +165,52 @@ function updateStatusBar(loggedIn: boolean, tooltip: string) {
     }
 }
 
+async function handleNotLoggedInState(showSuccess: boolean) {
+    if (isAutoLoggingIn) {
+        return; // Prevent loops
+    }
+
+    const config = vscode.workspace.getConfiguration('p4LoginMonitor');
+    const autoReconnect = config.get<boolean>('autoReconnect', true);
+
+    if (autoReconnect) {
+        const savedPassword = await secretStorage.get(P4_PASSWORD_KEY);
+        if (savedPassword) {
+            autoLogin(savedPassword);
+            return;
+        }
+    }
+
+    promptForLogin();
+}
+
+function autoLogin(password: string) {
+    isAutoLoggingIn = true;
+    updateStatusBar(false, 'Auto-reconnecting...');
+    
+    const child = exec('p4 login', (error, stdout, stderr) => {
+        isAutoLoggingIn = false;
+        const output = stdout + stderr;
+        
+        if (error || output.includes('invalid') || output.includes('failed')) {
+            console.error('P4 Auto-login failed:', output);
+            vscode.window.showWarningMessage('P4 Auto-login failed. The saved password might be incorrect or expired.');
+            // Clear the invalid password to prevent infinite loops of failing auto-login
+            secretStorage.delete(P4_PASSWORD_KEY);
+            promptForLogin();
+        } else {
+            console.log('P4 Auto-login successful');
+            vscode.window.showInformationMessage('P4: Auto-reconnected successfully');
+            checkP4LoginStatus(false);
+        }
+    });
+
+    if (child.stdin) {
+        child.stdin.write(password + '\n');
+        child.stdin.end();
+    }
+}
+
 function promptForLogin() {
     const now = Date.now();
     // Don't spam notifications - minimum 1 minute between notifications
@@ -147,10 +222,13 @@ function promptForLogin() {
     vscode.window.showWarningMessage(
         'Perforce login has expired. Please log in to continue using version control.',
         'Login Now',
+        'Login & Save Password',
         'Dismiss'
     ).then(selection => {
         if (selection === 'Login Now') {
             doP4Login();
+        } else if (selection === 'Login & Save Password') {
+            vscode.commands.executeCommand('p4LoginMonitor.savePassword');
         }
     });
 }

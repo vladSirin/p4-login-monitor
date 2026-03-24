@@ -2,7 +2,7 @@
   "name": "p4-login-monitor",
   "displayName": "P4 Login Monitor",
   "description": "Monitors Perforce login status and prompts for re-login when ticket expires",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "Shado",
   "author": {
     "name": "Shado"
@@ -49,6 +49,14 @@
       {
         "command": "p4LoginMonitor.login",
         "title": "P4: Login Now"
+      },
+      {
+        "command": "p4LoginMonitor.savePassword",
+        "title": "P4: Save Password for Auto-Reconnect"
+      },
+      {
+        "command": "p4LoginMonitor.clearPassword",
+        "title": "P4: Clear Saved Password"
       }
     ],
     "configuration": {
@@ -65,6 +73,11 @@
           "type": "boolean",
           "default": true,
           "description": "Show P4 login status in the status bar"
+        },
+        "p4LoginMonitor.autoReconnect": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically reconnect when disconnected if a password is saved"
         }
       }
     }
