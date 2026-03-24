@@ -12,8 +12,10 @@ A VS Code extension that monitors your Perforce (P4) login status and automatica
 
 - **Auto-Reconnect**: 
   - Save your password securely in VS Code's `SecretStorage`
+  - Passwords are automatically validated against `p4` before saving to prevent bad credentials
   - Automatically reconnects when your ticket expires in the background
   - Seamlessly handles re-authentication without interrupting your workflow
+  - The status bar explicitly warns you if Auto-Reconnect is enabled but no password is saved
 
 - **Smart Notifications**:
   - Warns you when your ticket is about to expire (< 30 minutes remaining)
@@ -67,6 +69,12 @@ You can set your password for the **Auto-Reconnect** feature in two ways:
 
 ## Release Notes
 
+### 1.1.3
+
+- Added strict **Password Validation**: `p4 login` is tested silently before passwords are saved.
+- Added visual warnings to the P4 Status Bar if Auto Connect is enabled but a password is missing.
+- Formalized project requirement enforcing documentation updates.
+
 ### 1.1.0
 
 - Added **Auto-Reconnect** feature using VS Code's secure `SecretStorage`
@@ -81,6 +89,10 @@ Initial release:
 - Automatic login status monitoring
 - Expiry warnings
 - One-click terminal login
+
+## Contributing / Project Requirements
+
+**Mandatory Documentation Policy**: Any future changes, features, or adjustments to this extension *must* be accompanied by corresponding updates to this `README.md` and the `description` field in `package.json` to ensure the Open VSX registry remains accurate.
 
 ## License
 

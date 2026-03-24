@@ -41,10 +41,23 @@ export function activate(context: vscode.ExtensionContext) {
                 ignoreFocusOut: true
             });
             if (password) {
-                await secretStorage.store(P4_PASSWORD_KEY, password);
-                vscode.window.showInformationMessage('P4 Login Monitor: Password saved securely.');
-                // Also trigger a login check right after saving
-                checkP4LoginStatus(true);
+                vscode.window.showInformationMessage('P4 Login Monitor: Verifying password...');
+                
+                const child = exec('p4 login', async (error, stdout, stderr) => {
+                    const output = stdout + stderr;
+                    if (error || output.includes('invalid') || output.includes('failed')) {
+                        vscode.window.showErrorMessage('P4 Login Monitor: Invalid password. Password was not saved.');
+                    } else {
+                        await secretStorage.store(P4_PASSWORD_KEY, password);
+                        vscode.window.showInformationMessage('P4 Login Monitor: Password verified and saved securely.');
+                        checkP4LoginStatus(true);
+                    }
+                });
+
+                if (child.stdin) {
+                    child.stdin.write(password + '\n');
+                    child.stdin.end();
+                }
             }
         })
     );
@@ -170,7 +183,14 @@ function updateStatusBar(loggedIn: boolean, tooltip: string) {
     secretStorage.get(P4_PASSWORD_KEY).then(
         savedPassword => {
             const hasPassword = !!savedPassword;
-            const autoConnectText = `Auto Connect: ${autoReconnect ? 'On' : 'Off'}`;
+            let autoConnectText = `Auto Connect: ${autoReconnect ? 'On' : 'Off'}`;
+            
+            if (autoReconnect && !hasPassword) {
+                autoConnectText += ' (⚠️ Warning: No password saved!)';
+                // Optionally highlight the status bar to draw attention
+                statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+            }
+            
             const savedPwdText = `Saved Password: ${hasPassword ? 'Yes' : 'No'}`;
             const fullTooltip = `Perforce: ${tooltip}\n${autoConnectText}\n${savedPwdText}\nClick to check status`;
             
