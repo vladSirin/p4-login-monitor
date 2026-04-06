@@ -2,7 +2,7 @@
   "name": "p4-login-monitor",
   "displayName": "P4 Login Monitor",
   "description": "Monitors Perforce login status, validates passwords, and automatically reconnects when ticket expires",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "publisher": "Shado",
   "author": {
     "name": "Shado"

@@ -69,6 +69,11 @@ You can set your password for the **Auto-Reconnect** feature in two ways:
 
 ## Release Notes
 
+### 1.1.4
+
+- Fixed an issue where the saved password was deleted on generic connection failures.
+- Auto-Connect now mutes expiry notifications when a valid password is saved and armed.
+
 ### 1.1.3
 
 - Added strict **Password Validation**: `p4 login` is tested silently before passwords are saved.

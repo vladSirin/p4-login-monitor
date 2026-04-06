@@ -228,13 +228,18 @@ function autoLogin(password: string) {
     
     const child = exec('p4 login', (error, stdout, stderr) => {
         isAutoLoggingIn = false;
-        const output = stdout + stderr;
+        const output = (stdout + stderr).toLowerCase();
         
-        if (error || output.includes('invalid') || output.includes('failed')) {
-            console.error('P4 Auto-login failed:', output);
+        if (output.includes('invalid') || output.includes('password must be set')) {
+            console.error('P4 Auto-login failed (invalid password):', output);
             vscode.window.showWarningMessage('P4 Auto-login failed. The saved password might be incorrect or expired.');
             // Clear the invalid password to prevent infinite loops of failing auto-login
             secretStorage.delete(P4_PASSWORD_KEY);
+            promptForLogin();
+        } else if (error || output.includes('failed')) {
+            console.error('P4 Auto-login failed (network/other):', output);
+            vscode.window.showWarningMessage('P4 Auto-login failed due to a connection or server error.');
+            // Do NOT delete the password here; it might just be a temporary network issue/VPN disconnect
             promptForLogin();
         } else {
             console.log('P4 Auto-login successful');
@@ -271,7 +276,15 @@ function promptForLogin() {
     });
 }
 
-function promptExpiringSoon(minutesRemaining: number) {
+async function promptExpiringSoon(minutesRemaining: number) {
+    const config = vscode.workspace.getConfiguration('p4LoginMonitor');
+    const autoReconnect = config.get<boolean>('autoReconnect', true);
+    
+    // Mute notification if auto connect is armed and a password is saved
+    if (autoReconnect && await secretStorage.get(P4_PASSWORD_KEY)) {
+        return;
+    }
+
     const now = Date.now();
     // Don't spam - minimum 5 minutes between expiry warnings
     if (now - lastNotificationTime < 300000) {
